@@ -1,0 +1,14 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "CMakeFiles\\AStar.dir\\Application.cpp.obj",
+            "outputs": [
+                "C:\\Users\\101142429\\CLionProjects\\AStar\\cmake-build-debug-visual-studio\\vc140.pdb",
+                "CMakeFiles\\AStar.dir\\Application.cpp.obj.ddi"
+            ],
+            "requires": []
+        }
+    ]
+}
