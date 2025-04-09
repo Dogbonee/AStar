@@ -1,3 +1,0 @@
-C:/Users/101142429/CLionProjects/AStar/cmake-build-debug-visual-studio/CMakeFiles/AStar.dir
-C:/Users/101142429/CLionProjects/AStar/cmake-build-debug-visual-studio/CMakeFiles/edit_cache.dir
-C:/Users/101142429/CLionProjects/AStar/cmake-build-debug-visual-studio/CMakeFiles/rebuild_cache.dir
