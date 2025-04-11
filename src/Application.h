@@ -14,10 +14,27 @@
 
 class Application {
 
+
+    enum class Mode
+    {
+        PlaceStart,
+        PlaceGoal,
+        PlaceWall
+    };
+
     std::shared_ptr<sf::RenderWindow> m_window;
     Graph m_graph;
     AStar m_pathfinder;
     std::vector<sf::Vector2i> m_path;
+    Mode m_mode;
+
+    sf::Vector2i m_startPos;
+    sf::Vector2i m_goalPos;
+    sf::CircleShape m_startCircle;
+    sf::CircleShape m_goalCircle;
+
+    sf::Vector2f m_pathSize;
+    sf::Vector2i m_currentMouseGridCoords;
 
 
     void Update();
