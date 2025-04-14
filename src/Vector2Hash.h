@@ -1,6 +1,4 @@
-//
-// Created by 101142429 on 4/9/2025.
-//
+
 
 #ifndef VECTOR2HASH_H
 #define VECTOR2HASH_H

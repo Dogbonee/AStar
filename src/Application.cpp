@@ -1,19 +1,11 @@
-//
-// Created by 101142429 on 3/19/2025.
-//
-
 #include "Application.h"
 
-#include "Data.h"
-
-
-Application::Application() : m_graph(Data::map2), m_pathfinder(m_graph), m_pathSize({30, 8})
+Application::Application() : m_pathfinder(m_graph), m_pathSize({30, 8}), m_mode(Mode::PlaceWall)
 {
-    m_window = std::make_shared<sf::RenderWindow>(sf::VideoMode({800, 600}), "AStar Pathfinding Demo");
+    m_window = std::make_unique<sf::RenderWindow>(sf::VideoMode({800, 600}), "AStar Pathfinding Demo");
 
-
-    m_startPos = {1,5};
-    m_goalPos = {9,5};
+    m_startPos = {7,10};
+    m_goalPos = {17,10};
 
     m_startCircle.setRadius(15);
     m_startCircle.setFillColor(sf::Color::Red);
@@ -25,7 +17,21 @@ Application::Application() : m_graph(Data::map2), m_pathfinder(m_graph), m_pathS
     m_goalCircle.setOrigin({-m_goalCircle.getRadius(), m_goalCircle.getRadius() - (m_pathSize.y + 2)});
     m_goalCircle.setPosition({m_goalPos.x * 30.f, m_goalPos.y * 30.f});
 
-    m_path = m_pathfinder.Run(m_startPos, m_goalPos);
+    m_startIndicator = m_startCircle;
+    m_goalIndicator = m_goalCircle;
+
+    auto startColor = m_startCircle.getFillColor();
+    auto goalColor = m_goalCircle.getFillColor();
+    startColor.a = 100;
+    goalColor.a = 100;
+    m_startIndicator.setFillColor(startColor);
+    m_goalIndicator.setFillColor(goalColor);
+
+    m_indicator.setSize({30,30});
+    m_indicator.setFillColor(sf::Color(255,255,255, 100));
+
+    UpdatePath();
+
 }
 
 Application::~Application() = default;
@@ -47,8 +53,18 @@ void Application::Update()
 void Application::Render()
 {
     m_window->clear();
-    DrawGraph(m_graph);
     DrawPath(m_path);
+    DrawGraph(m_graph);
+    if (m_mode == Mode::PlaceWall)
+    {
+        m_window->draw(m_indicator);
+    }else if (m_mode == Mode::PlaceStart)
+    {
+        m_window->draw(m_startIndicator);
+    }else if (m_mode == Mode::PlaceGoal)
+    {
+        m_window->draw(m_goalIndicator);
+    }
     m_window->display();
 }
 
@@ -75,12 +91,24 @@ void Application::HandleEvents()
             }
             else if (keyEvent->code == sf::Keyboard::Key::Enter)
             {
-                m_path = m_pathfinder.Run(m_startPos, m_goalPos);
+                UpdatePath();
             }
         }
         else if (const sf::Event::MouseMoved* mousePos = event->getIf<sf::Event::MouseMoved>())
         {
             m_currentMouseGridCoords = (mousePos->position / 30) - sf::Vector2i{1, 0};
+            m_startIndicator.setPosition({(m_currentMouseGridCoords.x) * 30.f, m_currentMouseGridCoords.y * 30.f});
+            m_goalIndicator.setPosition({(m_currentMouseGridCoords.x) * 30.f, m_currentMouseGridCoords.y * 30.f});
+            m_indicator.setPosition({(m_currentMouseGridCoords.x + 1) * 30.f, m_currentMouseGridCoords.y * 30.f});
+            if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left) && m_mode == Mode::PlaceWall)
+            {
+                m_graph[{m_currentMouseGridCoords.x + 1, m_currentMouseGridCoords.y}] = 1000;
+                UpdatePath();
+            }else if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Right) && m_mode == Mode::PlaceWall)
+            {
+                m_graph[{m_currentMouseGridCoords.x + 1, m_currentMouseGridCoords.y}] = 0;
+                UpdatePath();
+            }
         }
         else if (const sf::Event::MouseButtonPressed* mousePressed = event->getIf<sf::Event::MouseButtonPressed>())
         {
@@ -90,15 +118,27 @@ void Application::HandleEvents()
                 {
                     m_startPos = m_currentMouseGridCoords;
                     m_startCircle.setPosition({m_startPos.x * 30.f, m_startPos.y * 30.f});
+                    UpdatePath();
                 }
                 else if (m_mode == Mode::PlaceGoal)
                 {
                     m_goalPos = m_currentMouseGridCoords;
                     m_goalCircle.setPosition({m_goalPos.x * 30.f, m_goalPos.y * 30.f});
+                    UpdatePath();
                 }
                 else if (m_mode == Mode::PlaceWall)
                 {
-                    //TODO: implement
+                    m_graph[{m_currentMouseGridCoords.x + 1, m_currentMouseGridCoords.y}] = 1000;
+                    UpdatePath();
+                }
+            }
+            else if (mousePressed->button == sf::Mouse::Button::Right)
+            {
+                if (m_mode == Mode::PlaceWall &&
+                    m_graph[{m_currentMouseGridCoords.x + 1, m_currentMouseGridCoords.y}] != 0)
+                {
+                    m_graph[{m_currentMouseGridCoords.x + 1, m_currentMouseGridCoords.y}] = 0;
+                    UpdatePath();
                 }
             }
         }
@@ -107,19 +147,16 @@ void Application::HandleEvents()
 
 void Application::DrawGraph(const Graph& graph)
 {
-    auto size = graph.getSize();
-    for (int y = 0; y < size.y; y++)
+
+    for (auto pair : graph)
     {
-        for (int x = 0; x < size.x; x++)
-        {
-            if (graph[{x,y}])
+            if (pair.second != 0)
             {
                 sf::RectangleShape rect;
-                rect.setPosition({x * 30.f, y * 30.f});
+                rect.setPosition({pair.first.x * 30.f, pair.first.y * 30.f});
                 rect.setSize({30,30});
                 m_window->draw(rect);
             }
-        }
     }
 }
 
@@ -137,14 +174,7 @@ void Application::DrawPath(const std::vector<sf::Vector2i>& path)
 
         auto rotation = atan2(path[i+1].y - path[i].y, path[i+1].x - path[i].x);
         rect.setRotation(sf::radians(rotation));
-        if (!approx(rotation, 0.0f, 0.01) && !approx(rotation, 3.14f, 0.01f))
-        {
-            rect.setSize({rect.getSize().x + rect.getSize().y, rect.getSize().y});
-        }
-        if (approx(rotation, -1.57, 0.1))
-        {
-            rect.move({0, rect.getSize().y});
-        }
+
         m_window->draw(rect);
     }
     m_window->draw(m_startCircle);
@@ -154,6 +184,12 @@ void Application::DrawPath(const std::vector<sf::Vector2i>& path)
 bool Application::approx(float a, float b, float epsilon)
 {
     return fabs(a - b) < epsilon;
+}
+
+void Application::UpdatePath()
+{
+    m_pathfinder.setGraph(m_graph);
+    m_path = m_pathfinder.Run(m_startPos, m_goalPos);
 }
 
 

@@ -1,20 +1,14 @@
-//
-// Created by 101142429 on 3/19/2025.
-//
 
 #ifndef APPLICATION_H
 #define APPLICATION_H
 
 #include <SFML/Graphics.hpp>
 #include <memory>
-#include <cmath>
-
 #include "AStar.h"
-#include "Graph.h"
 
 class Application {
 
-
+    typedef std::unordered_map<sf::Vector2i, int, Vector2Hash> Graph;
     enum class Mode
     {
         PlaceStart,
@@ -22,7 +16,7 @@ class Application {
         PlaceWall
     };
 
-    std::shared_ptr<sf::RenderWindow> m_window;
+    std::unique_ptr<sf::RenderWindow> m_window;
     Graph m_graph;
     AStar m_pathfinder;
     std::vector<sf::Vector2i> m_path;
@@ -33,8 +27,15 @@ class Application {
     sf::CircleShape m_startCircle;
     sf::CircleShape m_goalCircle;
 
+    sf::CircleShape m_startIndicator;
+    sf::CircleShape m_goalIndicator;
+
+    sf::RectangleShape m_indicator;
+
     sf::Vector2f m_pathSize;
     sf::Vector2i m_currentMouseGridCoords;
+
+
 
 
     void Update();
@@ -46,6 +47,7 @@ class Application {
     void DrawPath(const std::vector<sf::Vector2i>& path);
 
     bool approx(float a, float b, float epsilon);
+    void UpdatePath();
 
 public:
 

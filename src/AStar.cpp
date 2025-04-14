@@ -1,18 +1,16 @@
-//
-// Created by 101142429 on 4/4/2025.
-//
-
 #include "AStar.h"
 
-AStar::AStar(Graph graph)
+AStar::AStar(Graph graph) : m_graph(graph)
 {
-    m_graph = std::make_unique<Graph>(graph);
-
-
 }
 
 std::vector<sf::Vector2i> AStar::Run(sf::Vector2i startingPoint, sf::Vector2i goalPoint)
 {
+    m_cameFrom.clear();
+    m_costSoFar.clear();
+    m_frontier = std::priority_queue<PriorityPoint>();
+
+
     m_frontier.push({startingPoint, 0});
     m_costSoFar[startingPoint] = 0;
 
@@ -27,14 +25,13 @@ std::vector<sf::Vector2i> AStar::Run(sf::Vector2i startingPoint, sf::Vector2i go
             return createPathFromMap(m_cameFrom, goalPoint);
         }
 
-        for (auto next : getNeighboredGraph(*m_graph, current.point))
+        for (auto next : getNeighboredGraph(m_graph, current.point))
         {
-            auto graphArray = m_graph->getGraphArray();
-            auto newCost = m_costSoFar[current.point] + m_graph->get(next);
+            auto newCost = m_costSoFar[current.point] + m_graph[next];
             if (!m_costSoFar.contains(next) || newCost < m_costSoFar[next])
             {
                 m_costSoFar[next] = newCost;
-                auto priority = newCost + heuristic(goalPoint, next);
+                auto priority = newCost + heuristic(next, goalPoint);
                 m_frontier.push({next, priority});
                 m_cameFrom[next] = current.point;
             }
@@ -43,6 +40,11 @@ std::vector<sf::Vector2i> AStar::Run(sf::Vector2i startingPoint, sf::Vector2i go
     }
 
     return createPathFromMap(m_cameFrom, goalPoint);
+}
+
+void AStar::setGraph(Graph graph)
+{
+    m_graph = graph;
 }
 
 int AStar::heuristic(sf::Vector2i startingPoint, sf::Vector2i goalPoint)

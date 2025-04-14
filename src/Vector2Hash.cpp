@@ -1,5 +1,3 @@
-
-
 #include "Vector2Hash.h"
 
 #include <cstddef>
